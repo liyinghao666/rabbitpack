@@ -1,0 +1,24 @@
+{
+  "name": "rabbitpack",
+  "version": "1.0.0",
+  "description": "faker of webpack",
+  "main": "none",
+  "scripts": {
+    "test": "node ./config/test.js",
+    "build": "node ./config/build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liyinghao666/rabbitpack.git"
+  },
+  "keywords": [
+    "rabbit",
+    "pack"
+  ],
+  "author": "bingyanrabbit",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/liyinghao666/rabbitpack/issues"
+  },
+  "homepage": "https://github.com/liyinghao666/rabbitpack#readme"
+}
