@@ -18,6 +18,7 @@
 			return compiler.watch(watchOptions, callback);
 		}
         // 假如用户没有显式声明watch 则使用普通的compiler
+        // 需要注意，如果用户传入了callback那么webpack会帮用户调用compiler的run方法，否则用户则需要拿到webpack返回的compiler对象之后手动调用compiler.run(callback)
 		compiler.run(callback);
 	}
 	return compiler;

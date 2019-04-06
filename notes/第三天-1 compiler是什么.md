@@ -4,7 +4,7 @@
 - compiler的run方法如何运作？
 - 调用compiler.watch后，发生了什么？
 
-为了解决第一个问题 我们当然应该先搞清楚compiler的一些细节，所以 我们先来解决后面两个问题。然而我们很快发现，跳过compiler的具体实现直接去看run方法是不现实的，鉴于此我先来概括compiler的文件内容：
+先来概括compiler的文件内容：
 
 ```js
 class Compiler extends Tapable {  // Tapable是一套基于钩子机制的流程方案 后面会详细说明    
@@ -48,6 +48,7 @@ class Compiler extends Tapable {  // Tapable是一套基于钩子机制的流程
 		this.fileTimestamps = new Map();
 		this.contextTimestamps = new Map();
         // 这个resolveFactory代替了之前版本的resolve.loader resolve.normal resolve.content
+        // 此处省略了一些兼容性处理的代码
 		this.resolverFactory = new ResolverFactory();
 		this.options = /** @type {WebpackOptions} */ ({});
 		this.context = context;
@@ -105,31 +106,29 @@ class SizeOnlySource extends Source {
 }
 ```
 
-至于我们之前提到的run方法，其实它并没有返回任何值，只是在生成的compiler对象内部做了一些改动。
-
-run方法：
+至于我们之前提到的run方法，其实它并没有返回任何值，只是在生成的compiler对象内部做了一些改动，并在最后调用compiler的compile方法：
 
 ```js
+	// function run()
 	run(callback) {
         // 假如之前已经调用过这个方法 就报错
 		if (this.running) return callback(new ConcurrentCompilationError());
-
 		const finalCallback = (err, stats) => {
+            // 终局
 			this.running = false;
-
 			if (err) {
 				this.hooks.failed.call(err);
 			}
-
+            // 这里真正调用用户传入的callback函数
 			if (callback !== undefined) return callback(err, stats);
 		};
 		// 标记run的开始时间
 		const startTime = Date.now();
 		this.running = true;
-
+		// 这个函数字面上看是编译完成时调用
 		const onCompiled = (err, compilation) => {
 			if (err) return finalCallback(err);
-
+			// 划重点 Tapable相关 什么时候返回false？
 			if (this.hooks.shouldEmit.call(compilation) === false) {
 				const stats = new Stats(compilation);
 				stats.startTime = startTime;
@@ -140,7 +139,7 @@ run方法：
 				});
 				return;
 			}
-
+			// 释放编译资源
 			this.emitAssets(compilation, err => {
 				if (err) return finalCallback(err);
 
@@ -160,7 +159,7 @@ run方法：
 					});
 					return;
 				}
-
+				// 释放编译记录
 				this.emitRecords(err => {
 					if (err) return finalCallback(err);
 
@@ -174,16 +173,14 @@ run方法：
 				});
 			});
 		};
-
+		// 依次触发 beforeRun 和 run 生命周期
 		this.hooks.beforeRun.callAsync(this, err => {
 			if (err) return finalCallback(err);
-
 			this.hooks.run.callAsync(this, err => {
 				if (err) return finalCallback(err);
-
 				this.readRecords(err => {
 					if (err) return finalCallback(err);
-
+					// 开启编译之门
 					this.compile(onCompiled);
 				});
 			});
