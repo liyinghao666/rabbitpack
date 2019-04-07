@@ -189,3 +189,4 @@ class SizeOnlySource extends Source {
 
 ```
 
+最终，流程总会指向this.compile()函数。
